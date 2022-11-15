@@ -55,7 +55,7 @@ void ScoreManager::saveScore()
 	{
 		for (auto&& s : _scores)
 		{
-			oFile.write((char*)&s, sizeof(_scores.size()));
+			oFile.write((char*)&s, sizeof(Score));
 		}
 		oFile.close();
 	}
