@@ -6,6 +6,20 @@
 
 ScoreManager::ScoreManager() : _fileName("scores.bin")
 {
+
+	if (!existFile())
+	{
+		createFile();
+	}
+	
+}
+
+ScoreManager::ScoreManager(std::string newName) : _fileName(newName)
+{
+	if (!existFile())
+	{
+		createFile();
+	}
 }
 
 ScoreManager::~ScoreManager()
@@ -13,12 +27,21 @@ ScoreManager::~ScoreManager()
 	_scores.clear();
 }
 
+const std::vector<ScoreManager::Score> ScoreManager::getScores() const
+{
+	return _scores;
+}
+
 void ScoreManager::addScore(const char name[256], const int score)
 {
 	Score newScore;
-	strcpy_s(newScore._name,name);
+	strcpy_s(newScore._name, name);
 	newScore._score = score;
-	_scores.emplace_back(newScore);
+	if (!std::count(_scores.begin(), _scores.end(), newScore))
+	{
+		_scores.emplace_back(newScore);
+	}
+	
 	sortScore();
 }
 
@@ -65,21 +88,33 @@ void ScoreManager::saveScore()
 
 void ScoreManager::loadScore()
 {
-	std::ifstream iFile(_fileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::ifstream iFile(_fileName, std::ios::in | std::ios::binary | std::ios::beg);
 
 	if (!iFile)
 	{
 		std::cout << "Cannot open file!" << std::endl;
 	}
 
-	////for (auto&& s : _scores)
-	//{
-		 iFile.read(reinterpret_cast<char*>(&_scores) , sizeof(Score));
-		/*std::cout << _scores._name;
-		std::cout << _scores._score;*/
-	//}
+	Score rScore;
+	
+	while (!iFile.eof())
+	{
+		iFile.read(reinterpret_cast<char*>(&rScore), sizeof(Score));
+		
+		if (rScore._name != "" && rScore._score > 0)
+		{
+			_scores.emplace_back(rScore);
+		}
+	}
+	
 
 	iFile.close();
+	
+}
+
+void ScoreManager::createFile()
+{
+	std::ofstream file(_fileName);
 }
 
 void ScoreManager::sortScore()
