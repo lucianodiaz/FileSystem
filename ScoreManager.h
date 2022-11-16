@@ -6,15 +6,14 @@
 #include <string>
 #include <fstream>
 
-template <class T = int> 
+template <class T = unsigned int> 
 class ScoreManager
 {
 private:
 	struct Score
 	{
-		T _score{};
 		char _name[256]{};
-
+		T _score{};
 		bool operator==(const Score& s) {
 			return _score == s._score && (std::strcmp(_name, s._name) == 0);
 		}
@@ -33,7 +32,7 @@ public:
 
 	~ScoreManager();
 
-	std::vector<Score> getScores() { return _scores; }
+	std::vector<Score> getScores() { return m_scores; }
 
 	void addScore(const char name[256], const T score);
 
@@ -51,12 +50,12 @@ private:
 
 	void createFile();
 	void sortScore();
-	std::vector<Score> _scores;
-	std::string _fileName;
+	std::vector<Score> m_scores;
+	std::string m_fileName;
 
 	const inline bool existFile() const {
 		struct stat buffer;
-		return (stat(_fileName.c_str(), &buffer) == 0);
+		return (stat(m_fileName.c_str(), &buffer) == 0);
 	}
 };
 
@@ -65,7 +64,7 @@ private:
 * Construct by default here create a file called score.bin by default if not exist previously
 */
 template<class T>
-ScoreManager<T>::ScoreManager<T>() : _fileName("scores.bin")
+ScoreManager<T>::ScoreManager<T>() : m_fileName("scores.bin")
 {
 
 	if (!existFile())
@@ -81,7 +80,7 @@ ScoreManager<T>::ScoreManager<T>() : _fileName("scores.bin")
 * @param string 'newName' of file you want to create
 */
 template<class T>
-ScoreManager<T>::ScoreManager<T>(std::string newName) : _fileName(newName)
+ScoreManager<T>::ScoreManager<T>(std::string newName) : m_fileName(newName)
 {
 	if (!existFile())
 	{
@@ -91,7 +90,7 @@ ScoreManager<T>::ScoreManager<T>(std::string newName) : _fileName(newName)
 template<class T>
 ScoreManager<T>::~ScoreManager<T>()
 {
-	_scores.clear();
+	m_scores.clear();
 }
 
 template<class T>
@@ -100,9 +99,9 @@ void ScoreManager<T>::addScore(const char name[256], const T score)
 	Score newScore;
 	strcpy_s(newScore._name, name);
 	newScore._score = score;
-	if (!std::count(_scores.begin(), _scores.end(), newScore))
+	if (!std::count(m_scores.begin(), m_scores.end(), newScore))
 	{
-		_scores.emplace_back(newScore);
+		m_scores.emplace_back(newScore);
 	}
 
 	sortScore();
@@ -111,21 +110,21 @@ void ScoreManager<T>::addScore(const char name[256], const T score)
 template<class T>
 void ScoreManager<T>::modifyScoreByIndex(int index, T newScore)
 {
-	_scores.at(index - 1)._score = newScore;
+	m_scores.at(index - 1)._score = newScore;
 	sortScore();
 }
 
 template<class T>
 void ScoreManager<T>::removeScore(int index)
 {
-	_scores.erase(_scores.begin() + index - 1);
+	m_scores.erase(m_scores.begin() + index - 1);
 }
 
 template<class T>
 void ScoreManager<T>::showScores()
 {
 	int i = 1;
-	for (auto&& s : _scores)
+	for (auto&& s : m_scores)
 	{
 		std::cout << i << ". " << s._name << " " << s._score << std::endl;
 		i++;
@@ -135,7 +134,7 @@ void ScoreManager<T>::showScores()
 template<class T>
 void ScoreManager<T>::saveScore()
 {
-	std::ofstream oFile(_fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+	std::ofstream oFile(m_fileName, std::ios::out | std::ios::binary | std::ios::trunc);
 	if (oFile.fail())
 	{
 		std::cout << "Cannot open file!" << std::endl;
@@ -143,9 +142,11 @@ void ScoreManager<T>::saveScore()
 	}
 	if (oFile.is_open())
 	{
-		for (auto&& s : _scores)
+		for (auto&& s : m_scores)
 		{
 			oFile.write((char*)&s, sizeof(Score));
+			/*oFile.write(s._name, (sizeof(s._name) + 1) * sizeof(char));
+			oFile.write(reinterpret_cast<char*>(&s._score), sizeof s._score);*/
 		}
 		oFile.close();
 	}
@@ -156,50 +157,34 @@ void ScoreManager<T>::saveScore()
 template<class T>
 void ScoreManager<T>::loadScore()
 {
-	std::ifstream iFile(_fileName, std::ios::binary | std::ios::ate);
-
+	std::ifstream iFile(m_fileName, std::ios::in | std::ios::binary | std::ios::beg);
 	if (!iFile.is_open())
 	{
-		std::cout << "Cannot open file!" << std::endl;
+		std::cout << "ERROR: Load operation failed. Could not open the score file!" << std::endl;
+		return;
 	}
-	size_t bufferSize = iFile.tellg();
-	iFile.seekg(0, iFile.beg);
-	std::vector<char> buffer(bufferSize);
-	iFile.getline(buffer.data(), bufferSize, '\n');
-
-	auto currentItem = buffer.begin();
-
-	while (currentItem != buffer.end())
-	{
-		auto iHead = currentItem;
-
-		while (*iHead != '\0')
-		{
-			iHead++;
-		}
-		auto nameBegin = currentItem;
-		auto nameEnd = iHead;
-
-		currentItem = ++iHead;
-
-		Score rScore;
-		rScore._name = std::string(nameBegin, nameEnd).c_str();
-		rScore._score = *reinterpret_cast<T*>(&currentItem);
-
-		_scores.emplace_back(rScore);
-
-		currentItem += sizeof(T);
-	}
-
-	/*Score rScore;
-
+	Score rScore;
+	
 	while (!iFile.eof())
 	{
 		iFile.read(reinterpret_cast<char*>(&rScore), sizeof(Score));
-
 		if (rScore._name != "" && rScore._score > 0)
 		{
-			_scores.emplace_back(rScore);
+			if (!std::count(m_scores.begin(), m_scores.end(), rScore))
+			{
+				m_scores.emplace_back(rScore);
+			}
+		}
+	}
+	
+
+	/*while (!iFile.eof())
+	{
+		iFile.read(reinterpret_cast<char*>(&rScore), sizeof(Score));
+	
+		if (rScore._name != "" && rScore._score > 0)
+		{
+			m_scores.emplace_back(rScore);
 		}
 	}*/
 
@@ -211,17 +196,17 @@ void ScoreManager<T>::loadScore()
 template<class T>
 void ScoreManager<T>::createFile()
 {
-	std::ofstream file(_fileName);
+	std::ofstream file(m_fileName);
 }
 
 template<class T>
 void ScoreManager<T>::sortScore()
 {
-	std::sort(_scores.begin(), _scores.end(), [](Score& a, Score& b) {return a._score > b._score; });
+	std::sort(m_scores.begin(), m_scores.end(), [](Score& a, Score& b) {return a._score > b._score; });
 }
 
 template<>
 void ScoreManager<char>::sortScore()
 {
-	std::sort(_scores.begin(), _scores.end(), [](Score& a, Score& b) {return a._score < b._score; });
+	std::sort(m_scores.begin(), m_scores.end(), [](Score& a, Score& b) {return a._score < b._score; });
 }
