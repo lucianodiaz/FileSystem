@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ScoreManager.h">
+    <ClInclude Include="src\ScoreManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
