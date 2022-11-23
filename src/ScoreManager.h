@@ -9,6 +9,7 @@
 template <class T = unsigned int> 
 class ScoreManager
 {
+	//__declspec(dllexport)
 private:
 	struct Score
 	{
@@ -64,7 +65,7 @@ private:
 * Construct by default here create a file called score.bin by default if not exist previously
 */
 template<class T>
-ScoreManager<T>::ScoreManager<T>() : m_fileName("scores.bin")
+ScoreManager<T>::ScoreManager() : m_fileName("scores.bin")
 {
 
 	if (!existFile())
@@ -80,7 +81,7 @@ ScoreManager<T>::ScoreManager<T>() : m_fileName("scores.bin")
 * @param string 'newName' of file you want to create
 */
 template<class T>
-ScoreManager<T>::ScoreManager<T>(std::string newName) : m_fileName(newName)
+ScoreManager<T>::ScoreManager(std::string newName) : m_fileName(newName)
 {
 	if (!existFile())
 	{
@@ -172,7 +173,7 @@ void ScoreManager<T>::loadScore()
 		{
 			if (!std::count(m_scores.begin(), m_scores.end(), rScore))
 			{
-				m_scores.emplace_back(rScore);
+ 				m_scores.emplace_back(rScore);
 			}
 		}
 	}
@@ -205,8 +206,8 @@ void ScoreManager<T>::sortScore()
 	std::sort(m_scores.begin(), m_scores.end(), [](Score& a, Score& b) {return a._score > b._score; });
 }
 
-template<>
-void ScoreManager<char>::sortScore()
-{
-	std::sort(m_scores.begin(), m_scores.end(), [](Score& a, Score& b) {return a._score < b._score; });
-}
+//template<>
+//void ScoreManager<char>::sortScore()
+//{
+//	std::sort(m_scores.begin(), m_scores.end(), [](Score& a, Score& b) {return a._score < b._score; });
+//}
