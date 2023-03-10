@@ -9,7 +9,7 @@
 template <class T = unsigned int> 
 class ScoreManager
 {
-	//__declspec(dllexport)
+	//__declspec(dllexport).
 private:
 	struct Score
 	{
